@@ -133,7 +133,7 @@ st.markdown('<h1 class="neon-title">🧮 CALCULADORA MÁGICA INFANTIL ✍️</h1
 st.markdown("""
     <div class="step-box">
         <p style="margin:0; font-size:1.05rem;">
-            ¡Bienvenido a la Calculadora Mágica! Dibuja un número en el tablero, la Inteligencia Artificial lo reconocerá y podrás hacer sumas, restas, multiplicaciones o divisiones.
+            ¡Bienvenido a la Calculadora Mágica! Dibuja un número en el tablero, la Inteligencia Artificial lo reconocerá y podrás hacer sumas, restas, multiplicaciones o divisiones. ¡Perfecto para que los niños aprendan a manejar los números!.
         </p>
     </div>
 """, unsafe_allow_html=True)
