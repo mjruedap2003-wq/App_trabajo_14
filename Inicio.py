@@ -15,14 +15,54 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. Estilos CSS Cyberpunk Neón Corregidos
+# 2. Estilos CSS Cyberpunk Neón (Barra Lateral y Fondo Completamente Oscuros)
 st.markdown("""
     <style>
+    /* Fondo general oscuro */
     .stApp {
         background-color: #1A1F2C !important;
         color: #FFFFFF !important;
     }
     #MainMenu, footer, header {visibility: hidden;}
+
+    /* FORZAR BARRA LATERAL TOTALMENTE OSCURA */
+    section[data-testid="stSidebar"] {
+        background-color: #121722 !important;
+        border-right: 2px solid #00F0FF !important;
+    }
+
+    section[data-testid="stSidebar"] > div {
+        background-color: #121722 !important;
+    }
+
+    /* Títulos y textos de la Barra Lateral en Azul Neón */
+    section[data-testid="stSidebar"] h1,
+    section[data-testid="stSidebar"] h2,
+    section[data-testid="stSidebar"] h3,
+    section[data-testid="stSidebar"] label,
+    section[data-testid="stSidebar"] .stMarkdown {
+        color: #00F0FF !important;
+        font-weight: bold !important;
+        text-shadow: 0 0 8px rgba(0, 240, 255, 0.6) !important;
+    }
+
+    /* Tarjetas de Métricas en la Barra Lateral */
+    div[data-testid="stMetric"] {
+        background-color: #1A2232 !important;
+        border: 1px solid #00F0FF !important;
+        border-radius: 8px !important;
+        padding: 10px !important;
+        box-shadow: 0 0 10px rgba(0, 240, 255, 0.2) !important;
+    }
+
+    div[data-testid="stMetricLabel"] {
+        color: #90CDF4 !important;
+    }
+
+    div[data-testid="stMetricValue"] {
+        color: #00FF66 !important;
+        font-weight: bold !important;
+    }
 
     /* Título principal con resplandor neón */
     .neon-title {
@@ -61,13 +101,6 @@ st.markdown("""
         padding: 1.5rem;
         text-align: center;
         box-shadow: 0 0 20px rgba(0, 255, 102, 0.4);
-    }
-
-    /* Forzar color azul neón en títulos nativos de markdown */
-    h2, h3, h4 {
-        color: #00F0FF !important;
-        font-weight: bold !important;
-        text-shadow: 0 0 5px rgba(0, 240, 255, 0.5) !important;
     }
 
     /* Marco del Canvas */
@@ -119,19 +152,21 @@ if "num2" not in st.session_state:
 if "step" not in st.session_state:
     st.session_state.step = 1
 
-# Sidebar
+# Barra Lateral (Sidebar) Oscura
 with st.sidebar:
-    st.title("⚙️ Estado de la App")
+    st.markdown('<div class="cyan-sub-title">⚙️ Estado de la App</div>', unsafe_allow_html=True)
+    
     if model:
         st.success("✅ Modelo MNIST Conectado")
     else:
         st.error("❌ Sube `mnist_model.keras` a la raíz de tu proyecto")
 
     st.markdown("---")
-    st.write("### 🧮 Números Guardados:")
+    st.markdown('<div class="cyan-sub-title">🧮 Números Guardados:</div>', unsafe_allow_html=True)
     st.metric("Primer Número", st.session_state.num1 if st.session_state.num1 is not None else "—")
     st.metric("Segundo Número", st.session_state.num2 if st.session_state.num2 is not None else "—")
 
+    st.markdown("<br>", unsafe_allow_html=True)
     if st.button("🔄 Reiniciar Calculadora"):
         st.session_state.num1 = None
         st.session_state.num2 = None
@@ -141,9 +176,9 @@ with st.sidebar:
 # Encabezado principal
 st.markdown('<h1 class="neon-title">🧮 CALCULADORA MÁGICA INFANTIL ✍️</h1>', unsafe_allow_html=True)
 
-# 🖼️ Espacio para cargar tu imagen propia desde GitHub
+# Espacio opcional para tu imagen fija desde GitHub
 try:
-    custom_image = Image.open('Gus_imagen.png')  # Cambia por el nombre exacto de tu archivo
+    custom_image = Image.open('Gus_imagen.png')
     col_img1, col_img2, col_img3 = st.columns([1, 2, 1])
     with col_img2:
         st.image(custom_image, use_container_width=True)
@@ -163,7 +198,7 @@ if model is None:
     st.warning("⚠️ No se ha encontrado el modelo `mnist_model.keras` en el repositorio.")
     st.stop()
 
-# --- PASO 1 & 2: DIBUJO DE NÚMEROS CON TEXTO AZUL NEÓN ---
+# --- PASO 1 & 2: DIBUJO DE NÚMEROS ---
 st.markdown(
     f'<div class="cyan-sub-title">✏️ Paso {st.session_state.step}: Dibuja el {"PRIMER" if st.session_state.step == 1 else "SEGUNDO"} número</div>', 
     unsafe_allow_html=True
