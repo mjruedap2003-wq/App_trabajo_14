@@ -178,7 +178,7 @@ st.markdown('<h1 class="neon-title">🧮 CALCULADORA MÁGICA INFANTIL ✍️</h1
 
 # Espacio opcional para tu imagen fija desde GitHub
 try:
-    custom_image = Image.open('Gus_imagen.png')
+    custom_image = Image.open('Calculadora_cool.jpg')
     col_img1, col_img2, col_img3 = st.columns([1, 2, 1])
     with col_img2:
         st.image(custom_image, use_container_width=True)
