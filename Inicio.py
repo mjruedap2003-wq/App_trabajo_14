@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. Estilos CSS para Niños (Cyber/Neón divertido)
+# 2. Estilos CSS Cyberpunk Neón Corregidos
 st.markdown("""
     <style>
     .stApp {
@@ -24,6 +24,7 @@ st.markdown("""
     }
     #MainMenu, footer, header {visibility: hidden;}
 
+    /* Título principal con resplandor neón */
     .neon-title {
         font-size: 2.3rem;
         font-weight: 900;
@@ -31,6 +32,16 @@ st.markdown("""
         color: #00F0FF;
         text-shadow: 0 0 10px #00F0FF, 0 0 20px #00F0FF;
         margin-bottom: 0.5rem;
+    }
+
+    /* Subtítulos y textos de los Pasos en Azul Neón */
+    .cyan-sub-title {
+        color: #00F0FF !important;
+        font-size: 1.4rem !important;
+        font-weight: 800 !important;
+        text-shadow: 0 0 8px rgba(0, 240, 255, 0.6) !important;
+        margin-top: 1rem !important;
+        margin-bottom: 0.8rem !important;
     }
 
     .step-box {
@@ -43,12 +54,6 @@ st.markdown("""
         margin-bottom: 1rem;
     }
 
-    .step-title {
-        color: #FF007F;
-        font-size: 1.1rem;
-        font-weight: bold;
-    }
-
     .result-box {
         background: linear-gradient(135deg, #0A2540 0%, #1A365D 100%);
         border: 3px solid #00FF66;
@@ -56,6 +61,13 @@ st.markdown("""
         padding: 1.5rem;
         text-align: center;
         box-shadow: 0 0 20px rgba(0, 255, 102, 0.4);
+    }
+
+    /* Forzar color azul neón en títulos nativos de markdown */
+    h2, h3, h4 {
+        color: #00F0FF !important;
+        font-weight: bold !important;
+        text-shadow: 0 0 5px rgba(0, 240, 255, 0.5) !important;
     }
 
     /* Marco del Canvas */
@@ -99,15 +111,15 @@ def load_mnist_model():
 
 model = load_mnist_model()
 
-# 4. Inicializar variables de estado de la calculadora
+# 4. Inicializar variables de estado
 if "num1" not in st.session_state:
     st.session_state.num1 = None
 if "num2" not in st.session_state:
     st.session_state.num2 = None
 if "step" not in st.session_state:
-    st.session_state.step = 1  # Paso 1: Número 1, Paso 2: Número 2
+    st.session_state.step = 1
 
-# Sidebar con estado del modelo e información
+# Sidebar
 with st.sidebar:
     st.title("⚙️ Estado de la App")
     if model:
@@ -126,14 +138,23 @@ with st.sidebar:
         st.session_state.step = 1
         st.rerun()
 
-# Encabezado
+# Encabezado principal
 st.markdown('<h1 class="neon-title">🧮 CALCULADORA MÁGICA INFANTIL ✍️</h1>', unsafe_allow_html=True)
+
+# 🖼️ Espacio para cargar tu imagen propia desde GitHub
+try:
+    custom_image = Image.open('Gus_imagen.png')  # Cambia por el nombre exacto de tu archivo
+    col_img1, col_img2, col_img3 = st.columns([1, 2, 1])
+    with col_img2:
+        st.image(custom_image, use_container_width=True)
+except Exception:
+    pass
 
 # Descripción de la app
 st.markdown("""
     <div class="step-box">
         <p style="margin:0; font-size:1.05rem;">
-            ¡Bienvenido a la Calculadora Mágica! Dibuja un número en el tablero, la Inteligencia Artificial lo reconocerá y podrás hacer sumas, restas, multiplicaciones o divisiones. ¡Perfecto para que los niños aprendan a manejar los números!.
+            ¡Bienvenido a la Calculadora Mágica! Dibuja un número en el tablero, la Inteligencia Artificial lo reconocerá y podrás hacer sumas, restas, multiplicaciones o divisiones.
         </p>
     </div>
 """, unsafe_allow_html=True)
@@ -142,8 +163,11 @@ if model is None:
     st.warning("⚠️ No se ha encontrado el modelo `mnist_model.keras` en el repositorio.")
     st.stop()
 
-# --- PASO 1 & 2: DIBUJO DE NÚMEROS ---
-st.markdown(f"### ✏️ Paso {st.session_state.step}: Dibuja el {'PRIMER' if st.session_state.step == 1 else 'SEGUNDO'} número")
+# --- PASO 1 & 2: DIBUJO DE NÚMEROS CON TEXTO AZUL NEÓN ---
+st.markdown(
+    f'<div class="cyan-sub-title">✏️ Paso {st.session_state.step}: Dibuja el {"PRIMER" if st.session_state.step == 1 else "SEGUNDO"} número</div>', 
+    unsafe_allow_html=True
+)
 
 col_canvas, col_ctrl = st.columns([2, 1])
 
@@ -160,22 +184,19 @@ with col_canvas:
     )
 
 with col_ctrl:
-    st.write("### 🕹️ Acciones")
+    st.markdown('<div class="cyan-sub-title">🕹️ Acciones</div>', unsafe_allow_html=True)
     
     if st.button("🔍 **Detectar Número**", type="primary"):
         if canvas_result.image_data is not None and np.max(canvas_result.image_data) > 0:
-            # Procesar la imagen para que coincida con MNIST (28x28 grayscale)
             image = Image.fromarray(canvas_result.image_data.astype("uint8")).convert("L")
             image_resized = image.resize((28, 28), Image.Resampling.LANCZOS)
             img_array = np.array(image_resized) / 255.0
             img_array = img_array.reshape(1, 28, 28, 1)
 
-            # Predecir número
             prediction = model.predict(img_array, verbose=0)
             detected_digit = int(np.argmax(prediction))
             confidence = float(np.max(prediction) * 100)
 
-            # Guardar número según el paso activo
             if st.session_state.step == 1:
                 st.session_state.num1 = detected_digit
                 st.success(f"🎉 ¡Primer número detectado: **{detected_digit}**! ({confidence:.1f}% confianza)")
@@ -194,7 +215,7 @@ with col_ctrl:
 # --- PASO 3: OPERACIÓN Y RESULTADO ---
 if st.session_state.num1 is not None and st.session_state.num2 is not None:
     st.markdown("---")
-    st.markdown("### ➕ Elije la operación para resolver:")
+    st.markdown('<div class="cyan-sub-title">➕ Elije la operación para resolver:</div>', unsafe_allow_html=True)
 
     col_op1, col_op2, col_op3, col_op4 = st.columns(4)
 
