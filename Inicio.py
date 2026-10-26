@@ -1,141 +1,233 @@
+import os
 import streamlit as st
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 from tensorflow import keras
 from PIL import Image
 from streamlit_drawable_canvas import st_canvas
-import os
 
+# 1. Configuración de la página
 st.set_page_config(
-    page_title="Detector de Dígitos MNIST",
+    page_title="Calculadora Mágica de Dígitos 🧮",
     page_icon="✍️",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# Mostrar versión en sidebar
-with st.sidebar:
-    st.write(f"**TensorFlow:** {tf.__version__}")
-    st.write(f"**Keras:** {keras.__version__}")
+# 2. Estilos CSS para Niños (Cyber/Neón divertido)
+st.markdown("""
+    <style>
+    .stApp {
+        background-color: #1A1F2C !important;
+        color: #FFFFFF !important;
+    }
+    #MainMenu, footer, header {visibility: hidden;}
 
-st.title("✍️ Detección de Dígitos Escritos a Mano")
-st.markdown("**Modelo CNN entrenado en Google Colab con MNIST**")
+    .neon-title {
+        font-size: 2.3rem;
+        font-weight: 900;
+        text-align: center;
+        color: #00F0FF;
+        text-shadow: 0 0 10px #00F0FF, 0 0 20px #00F0FF;
+        margin-bottom: 0.5rem;
+    }
 
-# Cargar modelo
+    .step-box {
+        background: #252D3D;
+        border: 2px solid #00F0FF;
+        border-radius: 12px;
+        padding: 1rem;
+        text-align: center;
+        box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+        margin-bottom: 1rem;
+    }
+
+    .step-title {
+        color: #FF007F;
+        font-size: 1.1rem;
+        font-weight: bold;
+    }
+
+    .result-box {
+        background: linear-gradient(135deg, #0A2540 0%, #1A365D 100%);
+        border: 3px solid #00FF66;
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 0 20px rgba(0, 255, 102, 0.4);
+    }
+
+    /* Marco del Canvas */
+    iframe[title="streamlit_drawable_canvas.canvas"] {
+        border: 3px solid #00F0FF !important;
+        border-radius: 10px !important;
+        box-shadow: 0 0 15px rgba(0, 240, 255, 0.3) !important;
+    }
+
+    /* Botones Neón */
+    div.stButton > button {
+        width: 100%;
+        background: transparent !important;
+        color: #00FF66 !important;
+        border: 2px solid #00FF66 !important;
+        border-radius: 10px !important;
+        font-weight: bold !important;
+        font-size: 1.1rem !important;
+        box-shadow: 0 0 10px rgba(0, 255, 102, 0.2) !important;
+    }
+
+    div.stButton > button:hover {
+        background-color: #00FF66 !important;
+        color: #0A0E17 !important;
+        box-shadow: 0 0 20px rgba(0, 255, 102, 0.8) !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# 3. Cargar el modelo MNIST
 @st.cache_resource
 def load_mnist_model():
-    """Carga el modelo MNIST desde archivo .keras"""
-    
-    # Buscar archivo del modelo
     model_files = ['mnist_model.keras', 'mnist_model.h5']
-    
     for model_path in model_files:
         if os.path.exists(model_path):
             try:
-                st.info(f"📂 Intentando cargar: {model_path}")
-                model = keras.models.load_model(model_path)
-                st.success(f"✅ Modelo cargado exitosamente desde: `{model_path}`")
-                return model
-            except Exception as e:
-                st.error(f"❌ Error al cargar {model_path}: {str(e)}")
+                return keras.models.load_model(model_path)
+            except Exception:
                 continue
-    
-    # Si no se encuentra el modelo
-    st.error("❌ No se encontró ningún modelo")
-    st.info("""
-    **Instrucciones:**
-    1. Entrena el modelo en Google Colab
-    2. Descarga `mnist_model.keras`
-    3. Súbelo a la raíz de tu repositorio
-    4. Reinicia la aplicación
-    """)
-    st.stop()
+    return None
 
-# Cargar modelo
 model = load_mnist_model()
 
-# Interfaz
-st.write("### 🎨 Dibuja un dígito del 0 al 9")
+# 4. Inicializar variables de estado de la calculadora
+if "num1" not in st.session_state:
+    st.session_state.num1 = None
+if "num2" not in st.session_state:
+    st.session_state.num2 = None
+if "step" not in st.session_state:
+    st.session_state.step = 1  # Paso 1: Número 1, Paso 2: Número 2
 
-col1, col2 = st.columns([2, 1])
+# Sidebar con estado del modelo e información
+with st.sidebar:
+    st.title("⚙️ Estado de la App")
+    if model:
+        st.success("✅ Modelo MNIST Conectado")
+    else:
+        st.error("❌ Sube `mnist_model.keras` a la raíz de tu proyecto")
 
-with col1:
-    canvas_result = st_canvas(
-        fill_color="black",
-        stroke_width=20,
-        stroke_color="white",
-        background_color="black",
-        width=400,
-        height=400,
-        drawing_mode="freedraw",
-        key="canvas",
-    )
+    st.markdown("---")
+    st.write("### 🧮 Números Guardados:")
+    st.metric("Primer Número", st.session_state.num1 if st.session_state.num1 is not None else "—")
+    st.metric("Segundo Número", st.session_state.num2 if st.session_state.num2 is not None else "—")
 
-with col2:
-    st.write("### 🎮 Controles")
-    predict_btn = st.button("🔍 **Predecir**", type="primary", use_container_width=True)
-    clear_btn = st.button("🗑️ Limpiar", use_container_width=True)
-    
-    if clear_btn:
+    if st.button("🔄 Reiniciar Calculadora"):
+        st.session_state.num1 = None
+        st.session_state.num2 = None
+        st.session_state.step = 1
         st.rerun()
 
-# Predicción
-if predict_btn:
-    if canvas_result.image_data is not None:
-        if np.max(canvas_result.image_data) == 0:
-            st.warning("⚠️ Por favor, dibuja un dígito primero")
-        else:
-            with st.spinner("🤔 Analizando..."):
-                # Procesar imagen
-                image = Image.fromarray(
-                    canvas_result.image_data.astype("uint8")
-                ).convert("L")
-                
-                image_resized = image.resize((28, 28), Image.Resampling.LANCZOS)
-                img_array = np.array(image_resized) / 255.0
-                img_array = img_array.reshape(1, 28, 28, 1)
-                
-                # Predicción
-                prediction = model.predict(img_array, verbose=0)
-                digit = np.argmax(prediction)
-                confidence = np.max(prediction) * 100
-            
-            # Resultados
-            st.success(f"## 🎯 Dígito detectado: **{digit}**")
-            
-            col_m1, col_m2, col_m3 = st.columns(3)
-            with col_m1:
-                st.metric("Predicción", digit)
-            with col_m2:
-                st.metric("Confianza", f"{confidence:.1f}%")
-            with col_m3:
-                alternative = np.argsort(prediction[0])[-2]
-                st.metric("2ª opción", alternative)
-            
-            # Mostrar imágenes
-            st.write("### 🖼️ Procesamiento")
-            col_img1, col_img2 = st.columns(2)
-            
-            with col_img1:
-                st.write("**Tu dibujo original:**")
-                st.image(canvas_result.image_data, width=200)
-            
-            with col_img2:
-                st.write("**Imagen procesada (28x28):**")
-                st.image(image_resized, width=200)
-            
-            # Gráfico de probabilidades
-            st.write("### 📊 Probabilidades por dígito")
-            import pandas as pd
-            prob_df = pd.DataFrame({
-                'Dígito': [str(i) for i in range(10)],
-                'Probabilidad (%)': prediction[0] * 100
-            })
-            st.bar_chart(prob_df.set_index('Dígito'))
-            
-            with st.expander("🔍 Ver detalles"):
-                for i, prob in enumerate(prediction[0]):
-                    emoji = "🎯" if i == digit else ""
-                    st.write(f"{emoji} **Dígito {i}**: {prob*100:.2f}%")
-    else:
-        st.warning("⚠️ Por favor, dibuja un dígito en el canvas")
+# Encabezado
+st.markdown('<h1 class="neon-title">🧮 CALCULADORA MÁGICA INFANTIL ✍️</h1>', unsafe_allow_html=True)
 
+# Descripción de la app
+st.markdown("""
+    <div class="step-box">
+        <p style="margin:0; font-size:1.05rem;">
+            ¡Bienvenido a la Calculadora Mágica! Dibuja un número en el tablero, la Inteligencia Artificial lo reconocerá y podrás hacer sumas, restas, multiplicaciones o divisiones.
+        </p>
+    </div>
+""", unsafe_allow_html=True)
+
+if model is None:
+    st.warning("⚠️ No se ha encontrado el modelo `mnist_model.keras` en el repositorio.")
+    st.stop()
+
+# --- PASO 1 & 2: DIBUJO DE NÚMEROS ---
+st.markdown(f"### ✏️ Paso {st.session_state.step}: Dibuja el {'PRIMER' if st.session_state.step == 1 else 'SEGUNDO'} número")
+
+col_canvas, col_ctrl = st.columns([2, 1])
+
+with col_canvas:
+    canvas_result = st_canvas(
+        fill_color="black",
+        stroke_width=22,
+        stroke_color="white",
+        background_color="black",
+        width=350,
+        height=350,
+        drawing_mode="freedraw",
+        key=f"canvas_step_{st.session_state.step}",
+    )
+
+with col_ctrl:
+    st.write("### 🕹️ Acciones")
+    
+    if st.button("🔍 **Detectar Número**", type="primary"):
+        if canvas_result.image_data is not None and np.max(canvas_result.image_data) > 0:
+            # Procesar la imagen para que coincida con MNIST (28x28 grayscale)
+            image = Image.fromarray(canvas_result.image_data.astype("uint8")).convert("L")
+            image_resized = image.resize((28, 28), Image.Resampling.LANCZOS)
+            img_array = np.array(image_resized) / 255.0
+            img_array = img_array.reshape(1, 28, 28, 1)
+
+            # Predecir número
+            prediction = model.predict(img_array, verbose=0)
+            detected_digit = int(np.argmax(prediction))
+            confidence = float(np.max(prediction) * 100)
+
+            # Guardar número según el paso activo
+            if st.session_state.step == 1:
+                st.session_state.num1 = detected_digit
+                st.success(f"🎉 ¡Primer número detectado: **{detected_digit}**! ({confidence:.1f}% confianza)")
+                st.session_state.step = 2
+                st.rerun()
+            else:
+                st.session_state.num2 = detected_digit
+                st.success(f"🎉 ¡Segundo número detectado: **{detected_digit}**! ({confidence:.1f}% confianza)")
+                st.rerun()
+        else:
+            st.warning("⚠️ Dibuja un número en el recuadro negro antes de detectar.")
+
+    if st.button("🗑️ Borrar Dibujo"):
+        st.rerun()
+
+# --- PASO 3: OPERACIÓN Y RESULTADO ---
+if st.session_state.num1 is not None and st.session_state.num2 is not None:
+    st.markdown("---")
+    st.markdown("### ➕ Elije la operación para resolver:")
+
+    col_op1, col_op2, col_op3, col_op4 = st.columns(4)
+
+    operation = None
+    if col_op1.button("➕ SUMAR"):
+        operation = "+"
+    if col_op2.button("➖ RESTAR"):
+        operation = "-"
+    if col_op3.button("✖️ MULTIPLICAR"):
+        operation = "*"
+    if col_op4.button("➗ DIVIDIR"):
+        operation = "/"
+
+    if operation:
+        n1 = st.session_state.num1
+        n2 = st.session_state.num2
+
+        if operation == "+":
+            res = n1 + n2
+            symbol = "+"
+        elif operation == "-":
+            res = n1 - n2
+            symbol = "-"
+        elif operation == "*":
+            res = n1 * n2
+            symbol = "×"
+        elif operation == "/":
+            res = round(n1 / n2, 2) if n2 != 0 else "Error (No se divide por 0)"
+            symbol = "÷"
+
+        st.markdown(f"""
+            <div class="result-box">
+                <h2 style="color: #00F0FF; margin:0;">🎯 ¡RESULTADO FINAL!</h2>
+                <h1 style="color: #00FF66; font-size: 3.5rem; margin:10px 0;">{n1} {symbol} {n2} = {res}</h1>
+            </div>
+        """, unsafe_allow_html=True)
